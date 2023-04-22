@@ -12,6 +12,7 @@ load_dotenv()
 PREFIX = '/'
 CHAT = PREFIX + "chat"
 DRAW = PREFIX + "draw"
+COMPLETE = PREFIX + "complete"
 
 openai.api_key = os.environ.get('API_KEY')
 
@@ -35,11 +36,12 @@ def process(message):
         return None
     
     if message['text'].startswith(PREFIX):
-        reply = "Sorry that's not a known command, try /chat or /draw."
+        reply = "Sorry that's not a known command, try /chat, /complete or /draw."
 
         if message['text'].startswith(CHAT):
+            prompt = message['text'][len(CHAT):].strip()
             messages = [{"role": "system", "content": "You are a helpful assistant."}, 
-                        {"role": "user", "content": message['text'][len(CHAT):].strip()}]
+                        {"role": "user", "content": prompt}]
             response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messages)
             reply = response.choices[0].message.content
             
@@ -48,7 +50,12 @@ def process(message):
             response = openai.Image.create(prompt=prompt, n=1, size="256x256")
             reply = response["data"][0]["url"]
         
-        return reply        
+        if message['text'].startswith(COMPLETE):
+            prompt = message['text'][len(COMPLETE):].strip()
+            response = openai.Completion.create(model="text-davinci-003", prompt=prompt, max_tokens=100)
+            reply = response.choices[0].text.strip()
+        
+        return reply
 
 
 
